@@ -11,10 +11,16 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    # 声明权限：允许写入仓库内容，解决 git push 403 错误
+    permissions:
+      contents: write
+
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
+        persist-credentials: true
 
     - name: Update EPG Files
       id: update
@@ -28,8 +34,8 @@ jobs:
 
           if ! cmp -s "$temp_file" epg.xml; then
             mv "$temp_file" epg.xml
-            echo "changed=true" >> $GITHUB_OUTPUT   # 推荐使用 GITHUB_OUTPUT
-            echo "changed=true" >> $GITHUB_ENV      # 同时保留兼容旧方式
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "changed=true" >> $GITHUB_ENV
           else
             echo "内容未变化，跳过更新"
             rm -f "$temp_file"
@@ -56,7 +62,7 @@ jobs:
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git add epg.xml epg.xml.gz
-        git status   # 打印状态，便于调试
+        git status
         git commit -m "EPG更新: $(date +'%Y-%m-%d %H:%M:%S')"
 
     - name: Push changes
@@ -64,4 +70,5 @@ jobs:
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: main
         force: false
